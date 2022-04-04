@@ -3,6 +3,7 @@ package roman
 import (
 	"errors"
 	"regexp"
+	"strconv"
 )
 
 //go:generate mockery --name ClockClient
@@ -23,8 +24,9 @@ func (*RomanClock) CurrentRomanTime() (string, error) {
 }
 
 // TimeToRomanTime() transcribes a time string into roman numbers, , e.g. XII:XV:IIX (12:15:08)
-func (*RomanClock) TimeToRomanTime(time string) (string, error) {
+func (rc *RomanClock) TimeToRomanTime(time string) (string, error) {
 	// POSIBLE SOLUTION FOR FIRST ITERATION:
+	//
 	//matched, err := regexp.Match(`^\d{1,2}:\d{1,2}:\d{1,2}$`, []byte(time))
 	//if err != nil {
 	//	return "", err
@@ -35,10 +37,49 @@ func (*RomanClock) TimeToRomanTime(time string) (string, error) {
 	//return "", nil
 
 	r := regexp.MustCompile(`^(\d{1,2}):(\d{1,2}):(\d{1,2})$`)
-
 	matches := r.FindStringSubmatch(time)
-	if len(matches) != 1 {
-		return "", errors.New("Invalid clock format")
+	if len(matches) != 4 { // [0]: matched string, [1-3]: capture groups
+		return "", errors.New("invalid time format")
 	}
-	return "", nil
+	hours, err := strconv.ParseInt(matches[1], 10, 64)
+	if hours > 23 || err != nil {
+		return "", errors.New("invalid value for hour")
+	}
+
+	minutes, err := strconv.ParseInt(matches[2], 10, 64)
+	if minutes > 59 || err != nil {
+		return "", errors.New("invalid value for minute")
+	}
+
+	seconds, err := strconv.ParseInt(matches[3], 10, 64)
+	if seconds > 59 || err != nil {
+		return "", errors.New("invalid value for minute")
+	}
+
+	return rc.intToRoman(int(hours)) + ":" + rc.intToRoman(int(minutes)) + ":" + rc.intToRoman(int(seconds)), nil
+}
+
+func (rc *RomanClock) intToRoman(num int) string {
+	values := []int{
+		1000, 900, 500, 400,
+		100, 90, 50, 40,
+		10, 9, 5, 4, 1,
+	}
+
+	symbols := []string{
+		"M", "CM", "D", "CD",
+		"C", "XC", "L", "XL",
+		"X", "IX", "V", "IV",
+		"I"}
+	roman := ""
+	i := 0
+	for num > 0 {
+		k := num / values[i]
+		for j := 0; j < k; j++ {
+			roman += symbols[i]
+			num -= values[i]
+		}
+		i++
+	}
+	return roman
 }
