@@ -18,9 +18,17 @@ type RomanClock struct {
 	clockClient ClockClient
 }
 
+func New(cc ClockClient) *RomanClock {
+	return &RomanClock{clockClient: cc}
+}
+
 // CurrentRomanTime() returns the time in roman numbers, e.g. XII:XV:IIX (12:15:08)
-func (*RomanClock) CurrentRomanTime() (string, error) {
-	return "", nil
+func (rc *RomanClock) CurrentRomanTime() (string, error) {
+	localRomanTime, err := rc.clockClient.CurrentTime()
+	if err != nil {
+		return "", err
+	}
+	return rc.TimeToRomanTime(localRomanTime)
 }
 
 // TimeToRomanTime() transcribes a time string into roman numbers, , e.g. XII:XV:IIX (12:15:08)

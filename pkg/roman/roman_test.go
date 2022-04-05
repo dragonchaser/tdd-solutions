@@ -1,7 +1,10 @@
 package roman_test
 
 import (
-	"example.com/tddworkshop/project/pkg/roman"
+	"errors"
+
+	"github.com/dragonchaser/tdd-solutions/pkg/roman"
+	"github.com/dragonchaser/tdd-solutions/pkg/roman/mocks"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -25,17 +28,17 @@ var _ = Describe("Roman", func() {
 		})
 
 		It("fails if hour is out of range", func() {
-			_, err := clock.TimeToRomanTime("25:10:05")
+			_, err := clock.TimeToRomanTime("24:10:05")
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("fails if minute is out of range", func() {
-			_, err := clock.TimeToRomanTime("25:60:05")
+			_, err := clock.TimeToRomanTime("23:60:05")
 			Expect(err).To(HaveOccurred())
 		})
 
 		It("fails if second is out of range", func() {
-			_, err := clock.TimeToRomanTime("25:10:60")
+			_, err := clock.TimeToRomanTime("23:10:60")
 			Expect(err).To(HaveOccurred())
 		})
 
@@ -69,8 +72,29 @@ var _ = Describe("Roman", func() {
 	})
 
 	Describe("CurrentRomanTime", func() {
-		PIt("handles errors when getting the time from the ClockClient")
-		PIt("returns the current time")
+		var (
+			romanClock *roman.RomanClock
+			cc         *mocks.ClockClient
+		)
+
+		BeforeEach(func() {
+			cc = &mocks.ClockClient{}
+			romanClock = roman.New(cc)
+		})
+
+		It("handles errors when getting the time from the ClockClient", func() {
+			cc.On("CurrentTime").Return("", errors.New("this is an hypothetical api"))
+			_, err := romanClock.CurrentRomanTime()
+			Expect(err).To(HaveOccurred())
+		})
+
+		It("returns the current time", func() {
+			cc.On("CurrentTime").Return("23:59:59", nil)
+
+			rtime, err := romanClock.CurrentRomanTime()
+			Expect(err).To(Not(HaveOccurred()))
+			Expect(rtime).To(Equal("XXIII:LIX:LIX"))
+		})
 	})
 })
 
